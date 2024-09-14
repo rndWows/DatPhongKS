@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đặt Phòng Khách Sạn</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+</head>
+
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-4xl font-bold mb-8 text-center text-blue-600">Đặt Phòng Khách Sạn</h1>
+
+        <!-- Filter Section -->
+        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-4">Bộ lọc tìm kiếm</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                    <label for="roomType" class="block mb-2">Loại phòng:</label>
+                    <select id="roomType" class="w-full p-2 border rounded">
+                        <option value="">Tất cả</option>
+                        <option value="Đơn">Đơn</option>
+                        <option value="Đôi">Đôi</option>
+                        <option value="Suite">Suite</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="capacity" class="block mb-2">Sức chứa:</label>
+                    <select id="capacity" class="w-full p-2 border rounded">
+                        <option value="">Tất cả</option>
+                        <option value="1">1 người</option>
+                        <option value="2">2 người</option>
+                        <option value="4">4 người</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="priceRange" class="block mb-2">Khoảng giá:</label>
+                    <input type="range" id="priceRange" min="0" max="2000000" step="100000" class="w-full">
+                    <div class="flex justify-between mt-2">
+                        <span id="minPrice">0 VND</span>
+                        <span id="maxPrice">2,000,000 VND</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 flex justify-between">
+                <button id="applyFilters" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Áp dụng bộ lọc
+                </button>
+                <button id="clearFilters"
+                    class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
+                    Bỏ lọc
+                </button>
+            </div>
+        </div>
+
+        <div id="rooms" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+    </div>
+
+    <!-- Modal -->
+    <div id="bookingModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modalTitle">Đặt phòng</h3>
+                <div class="mt-2 px-7 py-3">
+                    <input type="text" id="datePicker"
+                        class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none"
+                        placeholder="Chọn ngày nhận và trả phòng">
+                </div>
+                <div id="priceInfo" class="mt-2 text-sm text-gray-600"></div>
+                <div class="items-center px-4 py-3">
+                    <button id="bookBtn"
+                        class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                        Xác nhận đặt phòng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const bookingData = {
+            "rooms": [
+                {
+                    "id": 1,
+                    "number": "101",
+                    "type": "Đơn",
+                    "capacity": 1,
+                    "pricePerNight": 500000,
+                    "images": [
+                        "https://tubepfurniture.com/wp-content/uploads/2020/09/phong-mau-khach-san-go-cong-nghiep-01.jpg",
+                        "https://tubepfurniture.com/wp-content/uploads/2020/09/phong-mau-khach-san-go-cong-nghiep-04-640x400.jpg",
+                        "https://tubepfurniture.com/wp-content/uploads/2020/09/phong-mau-khach-san-go-cong-nghiep-05-640x400.jpg"
+                    ],
+                    "description": "Phòng đơn tiện nghi với view thành phố tuyệt đẹp."
+                },
+                {
+                    "id": 2,
+                    "number": "201",
+                    "type": "Đôi",
+                    "capacity": 2,
+                    "pricePerNight": 800000,
+                    "images": [
+                        "https://tubepfurniture.com/wp-content/uploads/2020/11/can-ho-mau-mini-tbf-1-640x400.jpg",
+                        "https://tubepfurniture.com/wp-content/uploads/2020/11/can-ho-mau-mini-tbf-5-640x400.jpg",
+                        "https://tubepfurniture.com/wp-content/uploads/2020/11/can-ho-mau-mini-tbf-8-640x400.jpg"
+                    ],
+                    "description": "Phòng đôi rộng rãi với ban công riêng."
+                },
+                {
+                    "id": 3,
+                    "number": "301",
+                    "type": "Suite",
+                    "capacity": 4,
+                    "pricePerNight": 1500000,
+                    "images": [
+                        "https://dyf.vn/wp-content/uploads/2021/01/thiet-ke-phong-ngu-khach-san-mini-2-giuong-don.jpg",
+                        "https://dyf.vn/wp-content/uploads/2021/01/thiet-ke-phong-ngu-khach-san-mini-2-giuong-doi.jpg",
+                        "https://dyf.vn/wp-content/uploads/2021/01/thiet-ke-noi-that-phong-khach-san-hien-dai.jpg"
+                    ],
+                    "description": "Suite sang trọng với phòng khách riêng và jacuzzi."
+                },
+                {
+                    "id": 4,
+                    "number": "401",
+                    "type": "Đơn",
+                    "capacity": 1,
+                    "pricePerNight": 500000,
+                    "images": [
+                        "URL_ADDRESS",
+                        "URL_ADDRESS",
+                        "URL_ADDRESS"
+                    ],
+                    "description": "Phòng đơn tiện nghi với view thành phố tuyệt đẹp."
+                },
+                {
+                    "id": 5,
+                    "number": "501",
+                    "type": "Đôi",
+                    "capacity": 2,
+                    "pricePerNight": 800000,
+                    "images": [
+                        "URL_ADDRESS",
+                        "URL_ADDRESS",
+                        "URL_ADDRESS"
+                    ],
+                    "description": "Phòng đôi rộng rãi với ban công riêng."
+                },
+                {
+                    "id": 6,
+                    "number": "601",
+                    "type": "Suite",
+                    "capacity": 4,
+                    "pricePerNight": 1500000,
+                    "images": [
+                        "URL_ADDRESS",
+                        "URL_ADDRESS",
+                        "URL_ADDRESS"
+                    ],
+                    "description": "Suite sang trọng với phòng khách riêng và jacuzzi."
+                },
+                {
+                    "id": 7,
+                    "number": "701",
+                    "type": "Đơn",
+                    "capacity": 1,
+                    "pricePerNight": 500000,
+                    "images": [
+                        "URL_ADDRESS",
+                        "URL_ADDRESS",
+                        "URL_ADDRESS"
+                    ],
+                    "description": "Phòng đơn tiện nghi với view thành phố tuyệt đẹp."
+                },
+                {
+                    "id": 8,
+                    "number": "801",
+                    "type": "Đôi",
+                    "capacity": 2,
+                    "pricePerNight": 800000,
+                    "images": [
+                        "URL_ADDRESS",
+                        "URL_ADDRESS",
+                        "URL_ADDRESS"
+                    ],
+                    "description": "Phòng đôi rộng rãi với ban công riêng."
+                },
+                {
+                    "id": 9,
+                    "number": "901",
+                    "type": "Suite",
+                    "capacity": 4,
+                    "pricePerNight": 1500000,
+                    "images": [
+                        "URL_ADDRESS",
+                        "URL_ADDRESS",
+                        "URL_ADDRESS"
+                    ],
+                    "description": "Suite sang trọng với phòng khách riêng và jacuzzi."
+                },
+                {
+                    "id": 10,
+                    "number": "1001",
+                    "type": "Đơn",
+                    "capacity": 1,
+                    "pricePerNight": 500000,
+                    "images": [
+                        "URL_ADDRESS",
+                        "URL_ADDRESS",
+                        "URL_ADDRESS"
+                    ],
+                    "description": "Phòng đơn tiện nghi với view thành phố tuyệt đẹp."
+                },
+                {
+                    "id": 11,
+                    "number": "1101",
+                    "type": "Đôi",
+                    "capacity": 2,
+                    "pricePerNight": 800000,
+                    "images": [
+                        "URL_ADDRESS",
+                        "URL_ADDRESS",
+                        "URL_ADDRESS"
+                    ],
+                    "description": "Phòng đôi rộng rãi với ban công riêng."
+                },
+                {
+                    "id": 12,
+                    "number": "1201",
+                    "type": "Suite",
+                    "capacity": 4,
+                    "pricePerNight": 1500000,
+                    "images": [
+                        "URL_ADDRESS",
+                        "URL_ADDRESS",
+                        "URL_ADDRESS"
+                    ],
+                    "description": "Suite sang trọng với phòng khách riêng và jacuzzi."
+                },
+
+
+            ],
+            "bookings": [
+                { "roomId": 1, "checkIn": "2024-09-15", "checkOut": "2024-09-20" },
+                { "roomId": 2, "checkIn": "2024-09-18", "checkOut": "2024-09-22" },
+                { "roomId": 3, "checkIn": "2024-09-20", "checkOut": "2024-09-25" },
+                { "roomId": 4, "checkIn": "2024-09-22", "checkOut": "2024-09-27" },
+                { "roomId": 5, "checkIn": "2024-09-25", "checkOut": "2024-09-30" },
+                { "roomId": 6, "checkIn": "2024-09-27", "checkOut": "2024-10-02" },
+                { "roomId": 7, "checkIn": "2024-10-02", "checkOut": "2024-10-07" },
+            ]
+        };
+
+        const roomsDiv = document.getElementById('rooms');
+        const bookingModal = document.getElementById('bookingModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const bookBtn = document.getElementById('bookBtn');
+        const priceInfo = document.getElementById('priceInfo');
+        const priceRange = document.getElementById('priceRange');
+        const minPriceDisplay = document.getElementById('minPrice');
+        const maxPriceDisplay = document.getElementById('maxPrice');
+        let currentRoomId;
+        let datePicker;
+
+        function createRoomCard(room) {
+            const card = document.createElement('div');
+            card.className = 'bg-white shadow-lg rounded-lg overflow-hidden';
+            card.innerHTML = `
+        <div class="room-images relative">
+            ${room.images.map(img => `
+                <div class="relative">
+                    <img src="${img}" alt="Room ${room.number}" class="w-full h-64 object-cover" onerror="this.onerror=null; this.src='/api/placeholder/400/320';">
+                    <div class="absolute inset-0 bg-gray-200 items-center justify-center flex loading-placeholder" style="display: none;">
+                        <svg class="animate-spin h-10 w-10 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        <div class="p-6">
+            <h2 class="text-2xl font-bold mb-2 text-gray-800">Phòng ${room.number}</h2>
+            <p class="text-gray-600 mb-4">${room.description}</p>
+            <p class="mb-2"><span class="font-semibold">Loại:</span> ${room.type}</p>
+            <p class="mb-2"><span class="font-semibold">Sức chứa:</span> ${room.capacity} người</p>
+            <p class="mb-4"><span class="font-semibold">Giá:</span> ${room.pricePerNight.toLocaleString()} VND/đêm</p>
+            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full w-full transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105" onclick="openBookingModal(${room.id})">
+                Đặt Phòng
+            </button>
+        </div>
+    `;
+
+            // Thêm xử lý sự kiện cho việc tải hình ảnh
+            const images = card.querySelectorAll('.room-images img');
+            const loadingPlaceholders = card.querySelectorAll('.loading-placeholder');
+
+            images.forEach((img, index) => {
+                img.addEventListener('load', () => {
+                    loadingPlaceholders[index].style.display = 'none';
+                });
+
+                img.addEventListener('error', () => {
+                    loadingPlaceholders[index].style.display = 'flex';
+                });
+            });
+
+            return card;
+        }
+        // Update price range display
+        priceRange.addEventListener('input', function () {
+            const value = this.value;
+            minPriceDisplay.textContent = '0 VND';
+            maxPriceDisplay.textContent = `${parseInt(value).toLocaleString()} VND`;
+        });
+        // New function to apply filters
+        function applyFilters() {
+            const roomType = document.getElementById('roomType').value;
+            const capacity = document.getElementById('capacity').value;
+            const maxPrice = parseInt(priceRange.value);
+
+            const filteredRooms = bookingData.rooms.filter(room => {
+                if (roomType && room.type !== roomType) return false;
+                if (capacity && room.capacity != capacity) return false;
+                if (room.pricePerNight > maxPrice) return false;
+                return true;
+            });
+
+            displayRooms(filteredRooms);
+        }
+
+        // Function to display rooms
+        function displayRooms(rooms) {
+            roomsDiv.innerHTML = '';
+            rooms.forEach(room => {
+                roomsDiv.appendChild(createRoomCard(room));
+            });
+
+            // Reinitialize Slick slider for the displayed rooms
+            $('.room-images').slick({
+                dots: true,
+                infinite: true,
+                speed: 500,
+                fade: true,
+                cssEase: 'linear',
+                autoplay: true,
+                autoplaySpeed: 3000
+            });
+        }
+        // Function to clear filters
+        function clearFilters() {
+            document.getElementById('roomType').value = '';
+            document.getElementById('capacity').value = '';
+            priceRange.value = priceRange.max;
+            maxPriceDisplay.textContent = `${parseInt(priceRange.max).toLocaleString()} VND`;
+            displayRooms(bookingData.rooms);
+        }
+        function openBookingModal(roomId) {
+            currentRoomId = roomId;
+            const room = bookingData.rooms.find(r => r.id === roomId);
+            modalTitle.textContent = `Đặt phòng ${room.number}`;
+            bookingModal.classList.remove('hidden');
+            initDatePicker(roomId);
+            updatePriceInfo();
+        }
+
+        function initDatePicker(roomId) {
+            const bookedDates = getBookedDates(roomId);
+            if (datePicker) {
+                datePicker.destroy();
+            }
+            datePicker = flatpickr("#datePicker", {
+                mode: "range",
+                minDate: "today",
+                dateFormat: "d/m/Y",
+                disable: bookedDates,
+                locale: "vn",
+                onClose: function (selectedDates) {
+                    updatePriceInfo();
+                    bookBtn.disabled = selectedDates.length !== 2;
+                }
+            });
+        }
+
+        function getBookedDates(roomId) {
+            const bookedDates = [];
+            bookingData.bookings.filter(b => b.roomId === roomId).forEach(booking => {
+                let currentDate = new Date(booking.checkIn);
+                const endDate = new Date(booking.checkOut);
+                while (currentDate < endDate) {
+                    bookedDates.push(new Date(currentDate));
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+            });
+            return bookedDates;
+        }
+
+        function updatePriceInfo() {
+            const selectedDates = datePicker.selectedDates;
+            if (selectedDates.length === 2) {
+                const nights = (selectedDates[1] - selectedDates[0]) / (1000 * 60 * 60 * 24);
+                const room = bookingData.rooms.find(r => r.id === currentRoomId);
+                const totalPrice = nights * room.pricePerNight;
+                priceInfo.textContent = `Tổng giá: ${totalPrice.toLocaleString()} VND cho ${nights} đêm`;
+            } else {
+                priceInfo.textContent = '';
+            }
+        }
+
+        bookBtn.addEventListener('click', function () {
+            const selectedDates = datePicker.selectedDates;
+            if (selectedDates.length === 2) {
+                const checkIn = selectedDates[0].toLocaleDateString('vi-VN');
+                const checkOut = selectedDates[1].toLocaleDateString('vi-VN');
+
+                // Sử dụng Toastify thay vì alert
+                Toastify({
+                    text: `Đặt phòng ${currentRoomId} thành công từ ${checkIn} đến ${checkOut}`,
+                    duration: 3000,
+                    close: true,
+                    gravity: "top",
+                    position: "right",
+                    backgroundColor: "linear-gradient(to right, #00b09b, #96c93d)",
+                }).showToast();
+
+                bookingData.bookings.push({
+                    roomId: currentRoomId,
+                    checkIn: selectedDates[0].toISOString().split('T')[0],
+                    checkOut: selectedDates[1].toISOString().split('T')[0]
+                });
+                bookingModal.classList.add('hidden');
+                datePicker.clear();
+            } else {
+                // Thông báo lỗi cũng sử dụng Toastify
+                Toastify({
+                    text: "Vui lòng chọn ngày nhận và trả phòng.",
+                    duration: 3000,
+                    close: true,
+                    gravity: "top",
+                    position: "right",
+                    backgroundColor: "#FF6347",
+                }).showToast();
+            }
+        });
+
+        // Event listener for the apply filters button
+        document.getElementById('applyFilters').addEventListener('click', applyFilters);
+
+        // Event listener for the clear filters button
+        document.getElementById('clearFilters').addEventListener('click', clearFilters);
+
+        bookBtn.addEventListener('click', function () {
+            // Existing booking logic remains the same
+        });
+
+        // Display all rooms initially
+        displayRooms(bookingData.rooms);
+
+        // Existing modal close logic remains the same
+
+        // Initialize Slick slider
+        $(document).ready(function () {
+            $('.room-images').slick({
+                dots: true,
+                infinite: true,
+                speed: 500,
+                fade: true,
+                cssEase: 'linear',
+                autoplay: true,
+                autoplaySpeed: 3000
+            });
+        });
+    </script>
+</body>
+
+</html>
